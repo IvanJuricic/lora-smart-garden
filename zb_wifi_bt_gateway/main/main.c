@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <time.h>
 #include "ble_custom.h"
+#include "wifi_custom.h"
+
+static const char *TAG = "Main: ESP32-C6";
 
 void app_main() {
 
@@ -13,4 +16,13 @@ void app_main() {
     ESP_ERROR_CHECK(ret);
 
     init_ble();
+    int wifi_status = 0;
+
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    wifi_status = wifi_init_sta();
+    if(wifi_status) {
+        printf("Wifi connected\n");
+    }
+
+    while(1){};
 }
