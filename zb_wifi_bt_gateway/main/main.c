@@ -15,14 +15,16 @@ void app_main() {
     }
     ESP_ERROR_CHECK(ret);
 
+    initCredentialsSemaphore();
+
     init_ble();
     int wifi_status = 0;
 
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
-    wifi_status = wifi_init_sta();
-    if(wifi_status) {
-        printf("Wifi connected\n");
+    if(xSemaphoreTake(wifiCredentialsSemaphore, portMAX_DELAY)) {
+        ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+        wifi_status = wifi_init_sta();
+        if(wifi_status) {
+            printf("Wifi connected\n");
+        }
     }
-
-    while(1){};
 }

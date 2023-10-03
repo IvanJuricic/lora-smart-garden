@@ -49,4 +49,21 @@
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
+#ifndef WIFI_CUSTOM_H
+#define WIFI_CUSTOM_H
+
+#include <freertos/semphr.h>
+
+typedef struct {
+    char ssid[20];
+    char password[20];
+} WifiCredentials;
+
+extern WifiCredentials wifiCredentials;
+extern SemaphoreHandle_t wifiCredentialsSemaphore;
+
+void initCredentialsSemaphore();
+
+#endif /* WIFI_CUSTOM_H */
+
 int wifi_init_sta(void);

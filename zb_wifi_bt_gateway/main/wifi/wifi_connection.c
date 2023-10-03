@@ -23,6 +23,9 @@ static const char *TAG = "wifi station";
 
 static int s_retry_num = 0;
 
+WifiCredentials wifiCredentials;  // Define the global variable
+SemaphoreHandle_t wifiCredentialsSemaphore;
+
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -73,8 +76,6 @@ int wifi_init_sta(void)
 
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = "Ivan",
-            .password = "ivanivan",
             /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (pasword len => 8).
              * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
              * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
@@ -84,7 +85,14 @@ int wifi_init_sta(void)
             .sae_pwe_h2e = ESP_WIFI_SAE_MODE,
             .sae_h2e_identifier = EXAMPLE_H2E_IDENTIFIER,
         },
-    };
+     };
+
+    strcpy((char *)wifi_config.sta.ssid, wifiCredentials.ssid);
+    strcpy((char *)wifi_config.sta.password, wifiCredentials.password);
+    //wifi_config.sta.threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD;
+    //wifi_config.sta.sae_pwe_h2e = ESP_WIFI_SAE_MODE;
+    //wifi_config.sta.sae_h2e_identifier = EXAMPLE_H2E_IDENTIFIER;
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
@@ -114,5 +122,19 @@ int wifi_init_sta(void)
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
         return -1;
+    }
+}
+
+void initCredentialsSemaphore() {
+    // Create a binary semaphore
+    wifiCredentialsSemaphore = xSemaphoreCreateBinary();
+
+    if (wifiCredentialsSemaphore == NULL) {
+        // Handle semaphore creation failure
+        // For simplicity, printing an error message
+        printf("Failed to create the semaphore.\n");
+    } else {
+        // Semaphore created successfully
+        printf("Semaphore created successfully.\n");
     }
 }

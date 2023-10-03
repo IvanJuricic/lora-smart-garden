@@ -1,10 +1,12 @@
 #include "ble_custom.h"
+#include "wifi_custom.h"
 
 static const char *manuf_name = "Apache Mynewt ESP32 devkitC";
 static const char *model_num = "Mynewt HR Sensor demo";
 uint16_t hrs_hrm_handle;
 
 char *ssid = NULL, *password = NULL;
+int creds = 0;
 
 static int
 gatt_svr_chr_access_heart_rate(uint16_t conn_handle, uint16_t attr_handle,
@@ -13,10 +15,6 @@ gatt_svr_chr_access_heart_rate(uint16_t conn_handle, uint16_t attr_handle,
 static int
 gatt_svr_chr_access_device_info(uint16_t conn_handle, uint16_t attr_handle,
                                 struct ble_gatt_access_ctxt *ctxt, void *arg);
-
-static int
-gatt_svr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max_len,
-               void *dst, uint16_t *len);
 
 static int
 gatt_svr_chr_wifi_credentials(uint16_t conn_handle, uint16_t attr_handle,
@@ -99,7 +97,6 @@ gatt_svr_chr_wifi_credentials(uint16_t conn_handle, uint16_t attr_handle,
 {
     uint16_t uuid, len;
     int rc;
-    char *token;
 
     uuid = ble_uuid_u16(ctxt->chr->uuid);
     len = ctxt->om->om_len;
@@ -115,12 +112,20 @@ gatt_svr_chr_wifi_credentials(uint16_t conn_handle, uint16_t attr_handle,
 
         strncpy(ssid, (char *)ctxt->om->om_data, len);
         ssid[len] = '\0';
-
-        printf("SSID: %s\n", ssid);
+        
+        strcpy(wifiCredentials.ssid, ssid);
+        printf("SSID: %s\n", wifiCredentials.ssid);
 
         free(ssid);
+
+        creds++;
+        if(creds == 2) {
+            printf("postavljena oba\n");
+            xSemaphoreGive(wifiCredentialsSemaphore);
+        }
         
         return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+
     } else if (uuid == GATT_WIFI_PASSWORD) {
 
         password = malloc(sizeof(char) * (len + 1));
@@ -134,10 +139,17 @@ gatt_svr_chr_wifi_credentials(uint16_t conn_handle, uint16_t attr_handle,
         strncpy(password, (char *)ctxt->om->om_data, len);
         password[len] = '\0';
 
-        printf("Password: %s\n", password);
+        strcpy(wifiCredentials.password, password);
+        printf("Password: %s\n", wifiCredentials.password);
 
         free(password);
-        
+
+        creds++;
+        if(creds == 2) {
+            printf("postavljena oba\n");
+            xSemaphoreGive(wifiCredentialsSemaphore);
+        }
+
         return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
     }
 
@@ -222,25 +234,6 @@ gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
     }
 }
 
-static int
-gatt_svr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max_len,
-               void *dst, uint16_t *len)
-{
-    uint16_t om_len;
-    int rc;
-
-    om_len = OS_MBUF_PKTLEN(om);
-    if (om_len < min_len || om_len > max_len) {
-        return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
-    }
-
-    rc = ble_hs_mbuf_to_flat(om, dst, max_len, len);
-    if (rc != 0) {
-        return BLE_ATT_ERR_UNLIKELY;
-    }
-
-    return 0;
-}
 
 int
 gatt_svr_init(void)
