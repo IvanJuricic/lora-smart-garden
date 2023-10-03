@@ -29,6 +29,10 @@
 #define GATT_MANUFACTURER_NAME_UUID             0x2A29
 #define GATT_MODEL_NUMBER_UUID                  0x2A24
 
+#define GATT_WIFI_CREDENTIALS_UUID              0x2B36
+#define GATT_WIFI_SSID                          0x3B40
+#define GATT_WIFI_PASSWORD                      0x4240
+
 extern uint16_t hrs_hrm_handle;
 
 struct ble_hs_cfg;
